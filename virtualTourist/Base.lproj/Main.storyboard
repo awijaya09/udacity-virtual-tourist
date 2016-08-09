@@ -83,7 +83,7 @@
                                     <inset key="sectionInset" minX="0.0" minY="0.0" maxX="0.0" maxY="0.0"/>
                                 </collectionViewFlowLayout>
                                 <cells>
-                                    <collectionViewCell opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" reuseIdentifier="photo" id="m7z-oy-oz7">
+                                    <collectionViewCell opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" reuseIdentifier="photo" id="m7z-oy-oz7" customClass="FlickrCell" customModule="virtualTourist" customModuleProvider="target">
                                         <rect key="frame" x="0.0" y="64" width="120" height="120"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                         <view key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center">
@@ -93,7 +93,7 @@
                                                 <imageView userInteractionEnabled="NO" tag="1002" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="tlJ-EM-dZF">
                                                     <rect key="frame" x="0.0" y="0.0" width="120" height="120"/>
                                                 </imageView>
-                                                <activityIndicatorView hidden="YES" opaque="NO" tag="1001" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" hidesWhenStopped="YES" style="whiteLarge" translatesAutoresizingMaskIntoConstraints="NO" id="UHx-XD-izR">
+                                                <activityIndicatorView opaque="NO" tag="1001" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" hidesWhenStopped="YES" animating="YES" style="whiteLarge" translatesAutoresizingMaskIntoConstraints="NO" id="UHx-XD-izR">
                                                     <rect key="frame" x="42" y="41" width="37" height="37"/>
                                                 </activityIndicatorView>
                                             </subviews>
@@ -108,6 +108,10 @@
                                             <constraint firstAttribute="trailing" secondItem="tlJ-EM-dZF" secondAttribute="trailing" id="fJL-HN-YXn"/>
                                             <constraint firstItem="UHx-XD-izR" firstAttribute="centerX" secondItem="m7z-oy-oz7" secondAttribute="centerX" id="r1x-Ur-B4R"/>
                                         </constraints>
+                                        <connections>
+                                            <outlet property="activityIndicator" destination="UHx-XD-izR" id="0w3-c9-WjT"/>
+                                            <outlet property="imageView" destination="tlJ-EM-dZF" id="u7v-V9-Bsu"/>
+                                        </connections>
                                     </collectionViewCell>
                                 </cells>
                                 <connections>
@@ -160,6 +164,7 @@
                     </view>
                     <navigationItem key="navigationItem" id="yrm-Ab-BVL"/>
                     <connections>
+                        <outlet property="collectionView" destination="Hkd-5l-9Gh" id="nQx-hq-pfd"/>
                         <outlet property="mapView" destination="QXh-uc-4yG" id="Ooe-jQ-i8Y"/>
                     </connections>
                 </viewController>

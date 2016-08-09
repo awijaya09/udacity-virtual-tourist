@@ -14,6 +14,7 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
     
     @IBOutlet weak var mapView: MKMapView!
 
+    @IBOutlet weak var collectionView: UICollectionView!
     var pin: Pin!
     var appDelegate: AppDelegate!
     var sharedContext: NSManagedObjectContext!
@@ -29,7 +30,8 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
         
         appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
         sharedContext = appDelegate.managedObjectContext
-        photos = [Photo]()
+        photos = getAllPhotos()
+        print(pin)
         centerLocation(initialLocation)
         
         mapView.delegate = self
@@ -51,6 +53,18 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
                 return
             }
         }
+    }
+    
+    func getAllPhotos()-> [Photo]{
+        let fetchRequest = NSFetchRequest(entityName: "Photo")
+        var results = [AnyObject]()
+        do{
+            results = try sharedContext.executeFetchRequest(fetchRequest)
+        }catch {
+            print("Error in fetching data")
+        }
+        
+        return results as! [Photo]
     }
 
     
@@ -100,7 +114,11 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
     }
     
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCellWithReuseIdentifier("photo", forIndexPath: indexPath)
+        let cell = collectionView.dequeueReusableCellWithReuseIdentifier("photo", forIndexPath: indexPath) as! FlickrCell
+        
+        let pht = photos[indexPath.row]
+        cell.activityIndicator.stopAnimating()
+        cell.imageView.image = pht.image
         
         return cell
     }
@@ -164,7 +182,6 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
                 print("There are no photos in this area, search again")
             }else{
                 for photoDictionary in photosArray{
-                    print(photoDictionary[Constants.FlickrPhotoParameterKeys.farm]!)
                     guard let farmId = photoDictionary[Constants.FlickrPhotoParameterKeys.farm] as? NSNumber else{
                         print("Unabel to get Farm ID")
                         return
@@ -189,6 +206,10 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
                     
                     self.photos.append(photo)
                     self.appDelegate!.saveContext()
+                    
+//                    performUIUpdatesOnMain({ 
+//                        self.collectionView.reloadData()
+//                    })
                     completionHandler(error: nil)
                 }
             }
