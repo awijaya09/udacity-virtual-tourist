@@ -1,5 +1,5 @@
 //
-//  Pin+CoreDataProperties.swift
+//  Photo+CoreDataProperties.swift
 //  virtualTourist
 //
 //  Created by Andree Wijaya on 8/9/16.
@@ -12,10 +12,10 @@
 import Foundation
 import CoreData
 
-extension Pin {
+extension Photo {
 
-    @NSManaged var latitude: NSNumber?
-    @NSManaged var longitude: NSNumber?
-    @NSManaged var photos:[Photo]?
+    @NSManaged var imageUrl: String?
+    @NSManaged var imagePath: String?
+    @NSManaged var pin: Pin?
 
 }

@@ -49,6 +49,24 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
         
         return view
     }
+    
+    //Getting the links for Flickr
+    func flickrURLFromParameter (parameters: [String:AnyObject]) -> NSURL{
+        let components = NSURLComponents()
+        components.scheme = Constants.Flickr.APIScheme
+        components.host = Constants.Flickr.APIHost
+        components.path = Constants.Flickr.APIPath
+        
+        components.queryItems = [NSURLQueryItem]()
+        
+        for (key, value) in parameters {
+            let queryItem = NSURLQueryItem(name: key, value: "\(value)")
+            components.queryItems?.append(queryItem)
+        }
+        
+        return components.URL!
+        
+    }
 }
 
 extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDataSource{
@@ -63,4 +81,94 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
         return cell
     }
     
+    
+    func getImageFromFlickrByLatLong (methodParameters:[String:AnyObject], completionHandler:(Error: NSError?)-> Void){
+        let session = NSURLSession.sharedSession()
+        let request = NSURLRequest(URL: flickrURLFromParameter(methodParameters))
+        
+        let task = session.dataTaskWithRequest(request) { (data, response, error) in
+            guard (error == nil) else{
+                print("There is something wrong with the request \(error)")
+                completionHandler(Error: error)
+                return
+            }
+            guard let statusCode = (response as? NSHTTPURLResponse)?.statusCode where statusCode >= 200 && statusCode <= 299 else {
+                print("Your request returned a status code other than 2xx!")
+                completionHandler(Error: NSError(domain: "getTask", code: 0, userInfo: nil))
+                return
+            }
+            
+            guard let data = data else {
+                print("No data was returned by the request!")
+                
+                completionHandler(Error: NSError(domain: "getTask", code: 3, userInfo: nil))
+                return
+            }
+            
+            let parsedResult: AnyObject!
+            
+            do{
+                parsedResult = try NSJSONSerialization.JSONObjectWithData(data, options: .AllowFragments)
+            }catch{
+                print("Could not parse data")
+                
+                completionHandler(Error: NSError(domain: "getTask", code: 3, userInfo: nil))
+                return
+            }
+            
+            guard let stat = parsedResult[Constants.FlickrResponseKeys.Status] as? String where stat == Constants.FlickrResponseValues.OKStatus else {
+                print("Flickr status was not OK!")
+                
+                completionHandler(Error: NSError(domain: "getTask", code: 1, userInfo: nil))
+                return
+            }
+            
+            guard let photosDictionary = parsedResult[Constants.FlickrResponseKeys.Photos] as? [String:AnyObject] else{
+                print("Unable to get photos dictionary")
+                
+                completionHandler(Error: NSError(domain: "getTask", code: 1, userInfo: nil))
+                return
+            }
+            
+            guard let photosArray = photosDictionary[Constants.FlickrResponseKeys.Photo] as? [[String: AnyObject]] else {
+                print("Unable to get photo array from dictionary")
+                
+                completionHandler(Error: NSError(domain: "getTask", code: 1, userInfo: nil))
+                return
+            }
+            
+            if photosArray.count == 0 {
+                print("There are no photos in this area, search again")
+            }else{
+                for photoDictionary in photosArray{
+                    guard let farmId = photoDictionary[Constants.FlickrPhotoParameterKeys.farm] as? String else{
+                        print("Unabel to get Farm ID")
+                        return
+                    }
+                    guard let serverId = photoDictionary[Constants.FlickrPhotoParameterKeys.server] as? String else {
+                        print("Unable to get server ID")
+                        return
+                    }
+                    guard let secret = photoDictionary[Constants.FlickrPhotoParameterKeys.secret] as? String else {
+                        print("Unable go get secret")
+                        return
+                    }
+                    
+                    guard let photoID = photoDictionary[Constants.FlickrPhotoParameterKeys.photoId] as? String else {
+                        print("Unable to get photo ID")
+                        return
+                    }
+                    
+                    let imageURL = NSURL(string: "https://farm\(farmId)/\(serverId)/\(photoID)_\(secret)_m.jpg")
+                    
+                    
+                    completionHandler(Error: nil)
+                }
+            }
+            
+            
+        }
+        
+        task.resume()
+    }
 }
