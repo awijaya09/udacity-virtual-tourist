@@ -112,6 +112,8 @@ class MainMapViewController: UIViewController, MKMapViewDelegate {
             sharedContext.deleteObject(pin)
             mapView.removeAnnotation(pin)
             appDelegate.saveContext()
+        }else{
+            performSegueWithIdentifier("getPhotoAlbum", sender: pin)
         }
     }
 
