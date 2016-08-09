@@ -12,6 +12,7 @@ import CoreData
 
 class MainMapViewController: UIViewController, MKMapViewDelegate {
 
+    @IBOutlet weak var editButton: UIBarButtonItem!
     @IBOutlet weak var mapView: MKMapView!
     @IBOutlet weak var toolbar: UIToolbar!
     var appDelegate: AppDelegate!
@@ -40,12 +41,15 @@ class MainMapViewController: UIViewController, MKMapViewDelegate {
     
     @IBAction func editMode(sender: AnyObject) {
         inEditMode = !inEditMode
+        
         if (inEditMode){
+            editButton.title = "Done"
             toolbar.hidden = false
             for recognizer in mapView.gestureRecognizers! {
                 mapView.removeGestureRecognizer(recognizer)
             }
         }else{
+            editButton.title = "Edit"
             toolbar.hidden = true
             setGestureRecognizer()
         }
@@ -114,6 +118,18 @@ class MainMapViewController: UIViewController, MKMapViewDelegate {
             appDelegate.saveContext()
         }else{
             performSegueWithIdentifier("getPhotoAlbum", sender: pin)
+        }
+    }
+    
+    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+        if segue.identifier == "getPhotoAlbum" {
+            let destination = segue.destinationViewController as! PhotoAlbumViewController
+            destination.pin = sender as! Pin
+            
+            //setting the back button item
+            let backButton = UIBarButtonItem()
+            backButton.title = "Back"
+            navigationItem.backBarButtonItem = backButton
         }
     }
 
