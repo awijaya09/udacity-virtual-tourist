@@ -90,7 +90,10 @@
                                             <rect key="frame" x="0.0" y="0.0" width="120" height="120"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
-                                                <activityIndicatorView opaque="NO" tag="1001" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" style="whiteLarge" translatesAutoresizingMaskIntoConstraints="NO" id="UHx-XD-izR">
+                                                <imageView userInteractionEnabled="NO" tag="1002" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="tlJ-EM-dZF">
+                                                    <rect key="frame" x="0.0" y="0.0" width="120" height="120"/>
+                                                </imageView>
+                                                <activityIndicatorView hidden="YES" opaque="NO" tag="1001" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" hidesWhenStopped="YES" style="whiteLarge" translatesAutoresizingMaskIntoConstraints="NO" id="UHx-XD-izR">
                                                     <rect key="frame" x="42" y="41" width="37" height="37"/>
                                                 </activityIndicatorView>
                                             </subviews>
@@ -98,7 +101,11 @@
                                         </view>
                                         <color key="backgroundColor" red="1" green="0.1027058849" blue="0.037152545090000003" alpha="1" colorSpace="calibratedRGB"/>
                                         <constraints>
+                                            <constraint firstAttribute="bottom" secondItem="tlJ-EM-dZF" secondAttribute="bottom" id="0Mf-8J-Zhj"/>
+                                            <constraint firstItem="tlJ-EM-dZF" firstAttribute="top" secondItem="m7z-oy-oz7" secondAttribute="top" id="2kE-lp-CTK"/>
                                             <constraint firstItem="UHx-XD-izR" firstAttribute="centerY" secondItem="m7z-oy-oz7" secondAttribute="centerY" id="K3E-CF-kqe"/>
+                                            <constraint firstItem="tlJ-EM-dZF" firstAttribute="leading" secondItem="m7z-oy-oz7" secondAttribute="leading" id="eOz-ej-QcZ"/>
+                                            <constraint firstAttribute="trailing" secondItem="tlJ-EM-dZF" secondAttribute="trailing" id="fJL-HN-YXn"/>
                                             <constraint firstItem="UHx-XD-izR" firstAttribute="centerX" secondItem="m7z-oy-oz7" secondAttribute="centerX" id="r1x-Ur-B4R"/>
                                         </constraints>
                                     </collectionViewCell>

@@ -13,7 +13,7 @@ import MapKit
 
 class Pin: NSManagedObject, MKAnnotation{
 
-
+    
     override init(entity: NSEntityDescription, insertIntoManagedObjectContext context: NSManagedObjectContext?) {
         super.init(entity: entity, insertIntoManagedObjectContext: context)
     }

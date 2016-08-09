@@ -8,13 +8,17 @@
 
 import UIKit
 import MapKit
+import CoreData
 
 class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
     
     @IBOutlet weak var mapView: MKMapView!
 
     var pin: Pin!
-    
+    var appDelegate: AppDelegate!
+    var sharedContext: NSManagedObjectContext!
+    var photos: [Photo]!
+
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -23,10 +27,30 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
              initialLocation = CLLocation(latitude: pin.latitude as! Double, longitude: pin.longitude as! Double)
         }
         
+        appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
+        sharedContext = appDelegate.managedObjectContext
+        photos = [Photo]()
         centerLocation(initialLocation)
         
         mapView.delegate = self
         mapView.addAnnotation(pin)
+        
+        
+        let parameters: [String: String!] = [Constants.FlickrParameterKeys.Method: Constants.FlickrParameterValues.searchMethod,
+                                            Constants.FlickrParameterKeys.APIKey: Constants.FlickrParameterValues.apiKey,
+                                            Constants.FlickrParameterKeys.latitude: "\(pin.latitude!)",
+                                            Constants.FlickrParameterKeys.longitude: "\(pin.longitude!)",
+                                            Constants.FlickrParameterKeys.perPage: "21",
+                                            Constants.FlickrParameterKeys.Format: Constants.FlickrParameterValues.format,
+                                            Constants.FlickrParameterKeys.NoJSONCallback: "1"
+                                            ]
+        
+        getImageFromFlickrByLatLong(parameters) { (error) in
+            guard (error == nil) else{
+                print("Something wrong with getting the image \(error)")
+                return
+            }
+        }
     }
 
     
@@ -81,27 +105,26 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
         return cell
     }
     
-    
-    func getImageFromFlickrByLatLong (methodParameters:[String:AnyObject], completionHandler:(Error: NSError?)-> Void){
+    func getImageFromFlickrByLatLong (methodParameters:[String:AnyObject], completionHandler:(error: NSError?)-> Void){
         let session = NSURLSession.sharedSession()
         let request = NSURLRequest(URL: flickrURLFromParameter(methodParameters))
-        
+        print(flickrURLFromParameter(methodParameters))
         let task = session.dataTaskWithRequest(request) { (data, response, error) in
             guard (error == nil) else{
                 print("There is something wrong with the request \(error)")
-                completionHandler(Error: error)
+                completionHandler(error: error)
                 return
             }
             guard let statusCode = (response as? NSHTTPURLResponse)?.statusCode where statusCode >= 200 && statusCode <= 299 else {
                 print("Your request returned a status code other than 2xx!")
-                completionHandler(Error: NSError(domain: "getTask", code: 0, userInfo: nil))
+                completionHandler(error: NSError(domain: "getTask", code: 0, userInfo: nil))
                 return
             }
             
             guard let data = data else {
                 print("No data was returned by the request!")
                 
-                completionHandler(Error: NSError(domain: "getTask", code: 3, userInfo: nil))
+                completionHandler(error: NSError(domain: "getTask", code: 3, userInfo: nil))
                 return
             }
             
@@ -112,28 +135,28 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
             }catch{
                 print("Could not parse data")
                 
-                completionHandler(Error: NSError(domain: "getTask", code: 3, userInfo: nil))
+                completionHandler(error: NSError(domain: "getTask", code: 3, userInfo: nil))
                 return
             }
             
             guard let stat = parsedResult[Constants.FlickrResponseKeys.Status] as? String where stat == Constants.FlickrResponseValues.OKStatus else {
                 print("Flickr status was not OK!")
                 
-                completionHandler(Error: NSError(domain: "getTask", code: 1, userInfo: nil))
+                completionHandler(error: NSError(domain: "getTask", code: 1, userInfo: nil))
                 return
             }
             
             guard let photosDictionary = parsedResult[Constants.FlickrResponseKeys.Photos] as? [String:AnyObject] else{
                 print("Unable to get photos dictionary")
                 
-                completionHandler(Error: NSError(domain: "getTask", code: 1, userInfo: nil))
+                completionHandler(error: NSError(domain: "getTask", code: 1, userInfo: nil))
                 return
             }
             
             guard let photosArray = photosDictionary[Constants.FlickrResponseKeys.Photo] as? [[String: AnyObject]] else {
                 print("Unable to get photo array from dictionary")
                 
-                completionHandler(Error: NSError(domain: "getTask", code: 1, userInfo: nil))
+                completionHandler(error: NSError(domain: "getTask", code: 1, userInfo: nil))
                 return
             }
             
@@ -141,7 +164,8 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
                 print("There are no photos in this area, search again")
             }else{
                 for photoDictionary in photosArray{
-                    guard let farmId = photoDictionary[Constants.FlickrPhotoParameterKeys.farm] as? String else{
+                    print(photoDictionary[Constants.FlickrPhotoParameterKeys.farm]!)
+                    guard let farmId = photoDictionary[Constants.FlickrPhotoParameterKeys.farm] as? NSNumber else{
                         print("Unabel to get Farm ID")
                         return
                     }
@@ -159,10 +183,13 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
                         return
                     }
                     
-                    let imageURL = NSURL(string: "https://farm\(farmId)/\(serverId)/\(photoID)_\(secret)_m.jpg")
+                    let imageURL = "https://farm\(farmId)/\(serverId)/\(photoID)_\(secret)_m.jpg"
                     
+                    let photo = Photo(imageUrl: imageURL, pin: self.pin, managedObjectContext: self.appDelegate!.managedObjectContext)
                     
-                    completionHandler(Error: nil)
+                    self.photos.append(photo)
+                    self.appDelegate!.saveContext()
+                    completionHandler(error: nil)
                 }
             }
             
