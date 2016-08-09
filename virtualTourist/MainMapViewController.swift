@@ -23,7 +23,7 @@ class MainMapViewController: UIViewController, MKMapViewDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         toolbar.hidden = true
-        //initializing coredata stack
+        //initializing app delegate and context
         appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
         sharedContext = appDelegate.managedObjectContext
         
