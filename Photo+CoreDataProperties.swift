@@ -17,5 +17,6 @@ extension Photo {
     @NSManaged var imageUrl: String?
     @NSManaged var imagePath: String?
     @NSManaged var pin: Pin?
+    @NSManaged var pageNumber: NSNumber?
 
 }

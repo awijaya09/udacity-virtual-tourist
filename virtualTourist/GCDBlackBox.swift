@@ -13,3 +13,9 @@ func performUIUpdatesOnMain(updates: () -> Void) {
         updates()
     }
 }
+
+func performImageDownload(url: String, updates: () -> Void) {
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0), {
+        updates()
+    })
+}

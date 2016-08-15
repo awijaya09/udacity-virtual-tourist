@@ -134,6 +134,9 @@
                                 <state key="normal" title="New Collection">
                                     <color key="titleColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 </state>
+                                <connections>
+                                    <action selector="getNewSetOfImages:" destination="cKh-lD-eNG" eventType="touchUpInside" id="C09-d1-V5d"/>
+                                </connections>
                             </button>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>

@@ -25,7 +25,6 @@ class Photo: NSManagedObject {
         self.imageUrl = imageUrl
         self.pin = pin
         
-        
     }
     
     func getFilePath()-> NSURL{

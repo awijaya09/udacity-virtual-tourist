@@ -118,7 +118,9 @@ class MainMapViewController: UIViewController, MKMapViewDelegate {
             mapView.removeAnnotation(pin)
             appDelegate.saveContext()
         }else{
+            mapView.deselectAnnotation(pin, animated: true)
             performSegueWithIdentifier("getPhotoAlbum", sender: pin)
+            
         }
     }
     

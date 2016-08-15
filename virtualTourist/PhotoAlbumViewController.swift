@@ -1,4 +1,4 @@
-//
+    //
 //  PhotoAlbumViewController.swift
 //  virtualTourist
 //
@@ -19,6 +19,7 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
     var appDelegate: AppDelegate!
     var sharedContext: NSManagedObjectContext!
     var photos: [Photo]!
+    var page = 1
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -37,6 +38,8 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
         mapView.delegate = self
         mapView.addAnnotation(pin)
         
+        page = Int((arc4random_uniform(UInt32(190)))) + 1
+        print("downloading page number : \(page)")
         
         let parameters: [String: String!] = [Constants.FlickrParameterKeys.Method: Constants.FlickrParameterValues.searchMethod,
                                             Constants.FlickrParameterKeys.APIKey: Constants.FlickrParameterValues.apiKey,
@@ -44,8 +47,43 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
                                             Constants.FlickrParameterKeys.longitude: "\(pin.longitude!)",
                                             Constants.FlickrParameterKeys.perPage: "21",
                                             Constants.FlickrParameterKeys.Format: Constants.FlickrParameterValues.format,
-                                            Constants.FlickrParameterKeys.NoJSONCallback: "1"
+                                            Constants.FlickrParameterKeys.NoJSONCallback: "1",
+                                            Constants.FlickrParameterKeys.page:"\(page)"
+            
                                             ]
+        if (!photos.isEmpty){
+            print("No download")
+            print(photos)
+        }else{
+            getImageFromFlickrByLatLong(parameters) { (error) in
+                guard (error == nil) else{
+                print("Something wrong with getting the image \(error)")
+                return
+                }
+            }
+        }
+    
+        
+    }
+    
+    @IBAction func getNewSetOfImages(sender: AnyObject) {
+        for photo in photos {
+            sharedContext.deleteObject(photo)
+        }
+        appDelegate.saveContext()
+        page = Int((arc4random_uniform(UInt32(190)))) + 1
+        print("downloading page number : \(page)")
+
+        let parameters: [String: String!] = [Constants.FlickrParameterKeys.Method: Constants.FlickrParameterValues.searchMethod,
+                                             Constants.FlickrParameterKeys.APIKey: Constants.FlickrParameterValues.apiKey,
+                                             Constants.FlickrParameterKeys.latitude: "\(pin.latitude!)",
+                                             Constants.FlickrParameterKeys.longitude: "\(pin.longitude!)",
+                                             Constants.FlickrParameterKeys.perPage: "21",
+                                             Constants.FlickrParameterKeys.Format: Constants.FlickrParameterValues.format,
+                                             Constants.FlickrParameterKeys.NoJSONCallback: "1",
+                                             Constants.FlickrParameterKeys.page:"\(page)"
+            
+        ]
         
         getImageFromFlickrByLatLong(parameters) { (error) in
             guard (error == nil) else{
@@ -53,10 +91,12 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
                 return
             }
         }
+        
+        
     }
-    
     func getAllPhotos()-> [Photo]{
         let fetchRequest = NSFetchRequest(entityName: "Photo")
+        fetchRequest.predicate = NSPredicate(format:"pin == %@", pin)
         var results = [AnyObject]()
         do{
             results = try sharedContext.executeFetchRequest(fetchRequest)
@@ -116,9 +156,20 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier("photo", forIndexPath: indexPath) as! FlickrCell
         
-        let pht = photos[indexPath.row]
-        cell.activityIndicator.stopAnimating()
-        cell.imageView.image = pht.image
+        if (!photos.isEmpty){
+            let pht = photos[indexPath.row]
+            cell.activityIndicator.stopAnimating()
+            print("Image Path : \(pht.imagePath)")
+            if (pht.imagePath != nil){
+                print(pht.imagePath!)
+                let documentDirectory = NSSearchPathForDirectoriesInDomains(.DocumentDirectory, .UserDomainMask, true)[0] as String
+                let path = documentDirectory + pht.imagePath!
+                let image = UIImage(contentsOfFile: path)
+                cell.imageView.image = image
+                
+            }
+
+        }
         
         return cell
     }
@@ -200,16 +251,31 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
                         return
                     }
                     
-                    let imageURL = "https://farm\(farmId)/\(serverId)/\(photoID)_\(secret)_m.jpg"
+                    let imageURL = "https://farm\(farmId).staticflickr.com/\(serverId)/\(photoID)_\(secret)_m.jpg"
                     
                     let photo = Photo(imageUrl: imageURL, pin: self.pin, managedObjectContext: self.appDelegate!.managedObjectContext)
+                    photo.pageNumber = self.page
+
+                    performImageDownload(photo.imageUrl!, updates: {
+                        if let url = NSURL.init(string: imageURL) {
+                            let data = NSData.init(contentsOfURL: url)
+                            let directory = NSSearchPathForDirectoriesInDomains(.DocumentDirectory, .UserDomainMask, true)[0] as String
+                            let path = directory + photoID
+                            data?.writeToFile(path,atomically: false)
+                            photo.imagePath = photoID 
+                    
+                            performUIUpdatesOnMain({
+                                self.collectionView.reloadData()
+                            })
+                        }
+                    })
                     
                     self.photos.append(photo)
                     self.appDelegate!.saveContext()
                     
-//                    performUIUpdatesOnMain({ 
-//                        self.collectionView.reloadData()
-//                    })
+                    
+                 
+                    
                     completionHandler(error: nil)
                 }
             }
