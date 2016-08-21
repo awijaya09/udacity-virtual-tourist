@@ -75,6 +75,7 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
     }
     
     @IBAction func getNewSetOfImages(sender: AnyObject) {
+        isDownloading = true
         for photo in photos {
             sharedContext.deleteObject(photo)
         }
