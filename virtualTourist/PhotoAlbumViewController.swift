@@ -75,12 +75,14 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
     }
     
     @IBAction func getNewSetOfImages(sender: AnyObject) {
+        
         isDownloading = true
         for photo in photos {
             sharedContext.deleteObject(photo)
         }
         appDelegate.saveContext()
         photos.removeAll()
+        itemCount = 21
         collectionView.reloadData()
         
         page = Int((arc4random_uniform(UInt32(30)))) + 1
