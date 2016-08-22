@@ -179,6 +179,21 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
                     let data = NSData.init(contentsOfURL: url)
                     pht.image = data
                     cell.imageView.image = UIImage(data: pht.image!)
+                    
+                    //updating image data on coredata
+//                    let updateRequest = NSBatchUpdateRequest(entityName: "Photo")
+//                    updateRequest.predicate = NSPredicate(format: "photo == %@", pht)
+//                    updateRequest.resultType = .UpdatedObjectIDsResultType
+//                    
+//                    updateRequest.propertiesToUpdate = ["image": data!]
+//                    
+//                    do {
+//                        try self.sharedContext.executeRequest(updateRequest)
+//                        self.appDelegate.saveContext()
+//                    }catch{
+//                        print("update error")
+//                    }
+                    
                     performUIUpdatesOnMain({
                         cell.activityIndicator.stopAnimating()
                         self.isDownloading = false
