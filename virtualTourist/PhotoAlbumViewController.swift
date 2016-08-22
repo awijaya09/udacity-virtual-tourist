@@ -15,6 +15,7 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
     @IBOutlet weak var mapView: MKMapView!
 
     @IBOutlet weak var collectionView: UICollectionView!
+    var itemCount = 21
     var pin: Pin!
     var appDelegate: AppDelegate!
     var sharedContext: NSManagedObjectContext!
@@ -33,7 +34,7 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
         appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
         sharedContext = appDelegate.managedObjectContext
         photos = getAllPhotos()
-        print(pin)
+        print("Number of photos saved : \(photos.count)")
         centerLocation(initialLocation)
         
         mapView.delegate = self
@@ -54,7 +55,6 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
                                             ]
         if (!photos.isEmpty){
             print("No download")
-            print(photos)
         }else{
             Convenience.getImagesByLatLong(flickrURLFromParameter(parameters),pin: self.pin,photos: self.photos, appDelegate: self.appDelegate, completionHandlerForPhoto: { (result, error) in
                 guard (error == nil) else{
@@ -80,6 +80,9 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
             sharedContext.deleteObject(photo)
         }
         appDelegate.saveContext()
+        photos.removeAll()
+        collectionView.reloadData()
+        
         page = Int((arc4random_uniform(UInt32(30)))) + 1
         print("downloading page number : \(page)")
 
@@ -165,8 +168,9 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
 
 extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDataSource{
     
+    
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return 21
+        return itemCount
     }
     
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
@@ -174,40 +178,35 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
         
         if (!photos.isEmpty){
             let pht = photos[indexPath.row]
-            performImageDownload(pht.imageUrl!, updates: {
-                if let url = NSURL.init(string: pht.imageUrl!) {
-                    let data = NSData.init(contentsOfURL: url)
-                    pht.image = data
-                    cell.imageView.image = UIImage(data: pht.image!)
-                    
-                    //updating image data on coredata
-//                    let updateRequest = NSBatchUpdateRequest(entityName: "Photo")
-//                    updateRequest.predicate = NSPredicate(format: "photo == %@", pht)
-//                    updateRequest.resultType = .UpdatedObjectIDsResultType
-//                    
-//                    updateRequest.propertiesToUpdate = ["image": data!]
-//                    
-//                    do {
-//                        try self.sharedContext.executeRequest(updateRequest)
-//                        self.appDelegate.saveContext()
-//                    }catch{
-//                        print("update error")
-//                    }
-                    
-                    performUIUpdatesOnMain({
-                        cell.activityIndicator.stopAnimating()
-                        self.isDownloading = false
-                    })
-                }
-            })
+            if let urlPht = pht.imageUrl {
+                performImageDownload(urlPht, updates: {
+                    if let url = NSURL.init(string: urlPht) {
+                        let data = NSData.init(contentsOfURL: url)
+                        pht.image = data
+                        
+                        
+                        performUIUpdatesOnMain({
+                            cell.imageView.image = UIImage(data: pht.image!)
+                            cell.activityIndicator.stopAnimating()
+                            self.isDownloading = false
+                        })
+                    }
+                })
+            }
+            
            
             if (pht.image != nil){
-                print(pht.image!)
                 let image = UIImage(data: pht.image!)
                 cell.imageView.image = image
                 
             }
 
+        }else{
+            performUIUpdatesOnMain({ 
+                
+                cell.imageView.image = nil
+                cell.activityIndicator.startAnimating()
+            })
         }
         
         
@@ -215,14 +214,19 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
     }
     
     func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
-        if isDownloading{
-            collectionView.deselectItemAtIndexPath(indexPath, animated: true)
-        }else{
-            
-            sharedContext.deleteObject(photos[indexPath.row])
-            collectionView.deleteItemsAtIndexPaths([indexPath])
+            let photo = photos[indexPath.row]
+        
+            let index = NSIndexPath(forRow: indexPath.row, inSection: 0)
+            let indexPaths = [index]
+            sharedContext.deleteObject(photo)
+            itemCount -= 1
+            collectionView.deleteItemsAtIndexPaths(indexPaths)
+        
             appDelegate.saveContext()
-        }
+        
+        
     }
+    
+    
     
 }

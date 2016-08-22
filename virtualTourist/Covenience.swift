@@ -90,20 +90,9 @@ struct Convenience {
                     let imageURL = "https://farm\(farmId).staticflickr.com/\(serverId)/\(photoID)_\(secret)_m.jpg"
                     let photo = Photo(pin: pin, imageUrl: imageURL, managedObjectContext: appDelegate.managedObjectContext)
                     
-                    
-//                    performImageDownload(imageURL, updates: {
-//                        if let url = NSURL.init(string: imageURL) {
-//                            let data = NSData.init(contentsOfURL: url)
-//                            photo.image = data
-//                            photosTemp.append(photo)
-//                        }
-//                        
-//                    })
                     photosTemp.append(photo)
                     
                     appDelegate.saveContext()
-                    
-                    
                     
                 }
                 completionHandlerForPhoto(result: photosTemp, error: nil)
