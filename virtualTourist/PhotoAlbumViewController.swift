@@ -56,7 +56,7 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
             print("No download")
             print(photos)
         }else{
-            Photo.getImagesByLatLong(flickrURLFromParameter(parameters),pin: self.pin,photos: self.photos, appDelegate: self.appDelegate, completionHandlerForPhoto: { (result, error) in
+            Convenience.getImagesByLatLong(flickrURLFromParameter(parameters),pin: self.pin,photos: self.photos, appDelegate: self.appDelegate, completionHandlerForPhoto: { (result, error) in
                 guard (error == nil) else{
                     print("Some error in the networking code: \(error)")
                     return
@@ -94,7 +94,7 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
             
         ]
         
-        Photo.getImagesByLatLong(flickrURLFromParameter(parameters),pin: self.pin,photos: self.photos, appDelegate: self.appDelegate, completionHandlerForPhoto: { (result, error) in
+        Convenience.getImagesByLatLong(flickrURLFromParameter(parameters),pin: self.pin,photos: self.photos, appDelegate: self.appDelegate, completionHandlerForPhoto: { (result, error) in
             guard (error == nil) else{
                 print("Some error in the networking code: \(error)")
                 return
@@ -174,8 +174,16 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
         
         if (!photos.isEmpty){
             let pht = photos[indexPath.row]
-            performUIUpdatesOnMain({
-                cell.activityIndicator.stopAnimating()
+            performImageDownload(pht.imageUrl!, updates: {
+                if let url = NSURL.init(string: pht.imageUrl!) {
+                    let data = NSData.init(contentsOfURL: url)
+                    pht.image = data
+                    cell.imageView.image = UIImage(data: pht.image!)
+                    performUIUpdatesOnMain({
+                        cell.activityIndicator.stopAnimating()
+                        self.isDownloading = false
+                    })
+                }
             })
            
             if (pht.image != nil){
