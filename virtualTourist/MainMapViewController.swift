@@ -76,9 +76,10 @@ class MainMapViewController: UIViewController, MKMapViewDelegate {
         
         if UIGestureRecognizerState.Began == gestureRecognizer.state {
             let pin = Pin(annotationLatitude: pointCoordinate.latitude, annotationLongitude: pointCoordinate.longitude, context: appDelegate!.managedObjectContext)
-            mapView.addAnnotation(pin)
-            print(pin.latitude)
-            appDelegate!.saveContext()
+            performUIUpdatesOnMain({
+                self.mapView.addAnnotation(pin)
+                self.appDelegate!.saveContext()
+            })
         }
     }
     

@@ -33,44 +33,45 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
         
         appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
         sharedContext = appDelegate.managedObjectContext
-        photos = getAllPhotos()
-        print("Number of photos saved : \(photos.count)")
-        centerLocation(initialLocation)
-        
         mapView.delegate = self
-        mapView.addAnnotation(pin)
-        
-        page = Int((arc4random_uniform(UInt32(190)))) + 1
-        print("downloading page number : \(page)")
-        
-        let parameters: [String: String!] = [Constants.FlickrParameterKeys.Method: Constants.FlickrParameterValues.searchMethod,
-                                            Constants.FlickrParameterKeys.APIKey: Constants.FlickrParameterValues.apiKey,
-                                            Constants.FlickrParameterKeys.latitude: "\(pin.latitude!)",
-                                            Constants.FlickrParameterKeys.longitude: "\(pin.longitude!)",
-                                            Constants.FlickrParameterKeys.perPage: "21",
-                                            Constants.FlickrParameterKeys.Format: Constants.FlickrParameterValues.format,
-                                            Constants.FlickrParameterKeys.NoJSONCallback: "1",
-                                            Constants.FlickrParameterKeys.page:"\(page)"
             
-                                            ]
-        if (!photos.isEmpty){
-            print("No download")
-        }else{
-            Convenience.getImagesByLatLong(flickrURLFromParameter(parameters),pin: self.pin,photos: self.photos, appDelegate: self.appDelegate, completionHandlerForPhoto: { (result, error) in
-                guard (error == nil) else{
-                    print("Some error in the networking code: \(error)")
-                    return
-                }
+            self.photos = self.getAllPhotos()
+            self.centerLocation(initialLocation)
+            
+            
+            self.mapView.addAnnotation(self.pin)
+            
+            self.page = Int((arc4random_uniform(UInt32(190)))) + 1
+            print("downloading page number : \(self.page)")
+            
+            let parameters: [String: String!] = [Constants.FlickrParameterKeys.Method: Constants.FlickrParameterValues.searchMethod,
+                Constants.FlickrParameterKeys.APIKey: Constants.FlickrParameterValues.apiKey,
+                Constants.FlickrParameterKeys.latitude: "\(self.pin.latitude!)",
+                Constants.FlickrParameterKeys.longitude: "\(self.pin.longitude!)",
+                Constants.FlickrParameterKeys.perPage: "21",
+                Constants.FlickrParameterKeys.Format: Constants.FlickrParameterValues.format,
+                Constants.FlickrParameterKeys.NoJSONCallback: "1",
+                Constants.FlickrParameterKeys.page:"\(self.page)"
                 
-                self.photos = result
+            ]
+            if (!self.photos.isEmpty){
+                print("No download")
+            }else{
+                Convenience.getImagesByLatLong(self.flickrURLFromParameter(parameters),pin: self.pin,photos: self.photos, appDelegate: self.appDelegate, completionHandlerForPhoto: { (result, error) in
+                    guard (error == nil) else{
+                        print("Some error in the networking code: \(error)")
+                        return
+                    }
+                    
+                    self.photos = result
+                    performUIUpdatesOnMain({
+                        self.collectionView.reloadData()
+                        self.isDownloading = false
+                    })
+                })
                 
-            })
-            performUIUpdatesOnMain({ 
-                self.collectionView.reloadData()
-                self.isDownloading = false
-            })
-        }
-    
+            }
+            
         
     }
     
@@ -100,17 +101,18 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
         ]
         
         Convenience.getImagesByLatLong(flickrURLFromParameter(parameters),pin: self.pin,photos: self.photos, appDelegate: self.appDelegate, completionHandlerForPhoto: { (result, error) in
+            print("downloading in progress")
             guard (error == nil) else{
                 print("Some error in the networking code: \(error)")
                 return
             }
             
             self.photos = result
+            performUIUpdatesOnMain({
+                self.collectionView.reloadData()
+                self.isDownloading = false
+            })
             
-        })
-        performUIUpdatesOnMain({
-            self.collectionView.reloadData()
-            self.isDownloading = false
         })
         
         
@@ -172,36 +174,67 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
     
     
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return itemCount
+        if (photos.isEmpty){
+            print("no item")
+            return itemCount
+        }else{
+            
+            return photos.count
+        }
     }
-    
+    func updateImageData(data: NSData, imageUrl: String){
+        let fetchRequest = NSFetchRequest(entityName: "Photo")
+        fetchRequest.predicate = NSPredicate(format: "imageUrl == %@", imageUrl)
+        do{
+            if let fetchedResult = try appDelegate.managedObjectContext.executeFetchRequest(fetchRequest) as? [NSManagedObject] {
+                if (fetchedResult.count != 0){
+                    let managedObject = fetchedResult[0]
+                    managedObject.setValue(data, forKey: "image")
+                    
+                    try sharedContext.save()
+                }
+            }
+        } catch{
+            print("update failed")
+            return
+        }
+       
+    }
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier("photo", forIndexPath: indexPath) as! FlickrCell
+       
         
         if (!photos.isEmpty){
+            
             let pht = photos[indexPath.row]
-            if let urlPht = pht.imageUrl {
-                performImageDownload(urlPht, updates: {
-                    if let url = NSURL.init(string: urlPht) {
-                        let data = NSData.init(contentsOfURL: url)
-                        pht.image = data
+            if (pht.image == nil){
+                print("Downloading image")
+                if let urlPht = pht.imageUrl {
+                    performImageDownload(urlPht, updates: {
+                        if let url = NSURL.init(string: urlPht) {
+                            let data = NSData.init(contentsOfURL: url)
+                            pht.image = data
                         
-                        
-                        performUIUpdatesOnMain({
-                            cell.imageView.image = UIImage(data: pht.image!)
-                            cell.activityIndicator.stopAnimating()
-                            self.isDownloading = false
-                        })
-                    }
+                            performUIUpdatesOnMain({
+                                self.updateImageData(data!, imageUrl: pht.imageUrl!)
+                                cell.imageView.image = UIImage(data: pht.image!)
+                                cell.activityIndicator.stopAnimating()
+                                self.isDownloading = false
+                            })
+                        }
+                    })
+                }
+            }else{
+                print("using images from coredata")
+                performUIUpdatesOnMain({ 
+                    cell.imageView.image = UIImage(data: pht.image!)
+                    cell.activityIndicator.stopAnimating()
+                    self.isDownloading = false
                 })
             }
             
+            
            
-            if (pht.image != nil){
-                let image = UIImage(data: pht.image!)
-                cell.imageView.image = image
-                
-            }
 
         }else{
             performUIUpdatesOnMain({ 
@@ -221,8 +254,8 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
             let index = NSIndexPath(forRow: indexPath.row, inSection: 0)
             let indexPaths = [index]
             sharedContext.deleteObject(photo)
-            itemCount -= 1
             collectionView.deleteItemsAtIndexPaths(indexPaths)
+            photos.removeAtIndex(indexPath.row)
         
             appDelegate.saveContext()
         
