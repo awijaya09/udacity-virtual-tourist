@@ -34,6 +34,7 @@ class PhotoAlbumViewController: UIViewController, MKMapViewDelegate {
         appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
         sharedContext = appDelegate.managedObjectContext
         mapView.delegate = self
+        mapView.userInteractionEnabled = false
             
             self.photos = self.getAllPhotos()
             self.centerLocation(initialLocation)
@@ -214,9 +215,9 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
                         if let url = NSURL.init(string: urlPht) {
                             let data = NSData.init(contentsOfURL: url)
                             pht.image = data
-                        
+                            self.appDelegate.saveContext()
                             performUIUpdatesOnMain({
-                                self.updateImageData(data!, imageUrl: pht.imageUrl!)
+                                //self.updateImageData(data!, imageUrl: pht.imageUrl!)
                                 cell.imageView.image = UIImage(data: pht.image!)
                                 cell.activityIndicator.stopAnimating()
                                 self.isDownloading = false
@@ -254,8 +255,9 @@ extension PhotoAlbumViewController: UICollectionViewDelegate, UICollectionViewDa
             let index = NSIndexPath(forRow: indexPath.row, inSection: 0)
             let indexPaths = [index]
             sharedContext.deleteObject(photo)
-            collectionView.deleteItemsAtIndexPaths(indexPaths)
             photos.removeAtIndex(indexPath.row)
+            collectionView.deleteItemsAtIndexPaths(indexPaths)
+        
         
             appDelegate.saveContext()
         
